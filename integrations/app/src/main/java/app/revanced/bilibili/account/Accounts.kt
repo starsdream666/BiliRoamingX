@@ -185,46 +185,6 @@ object Accounts {
         require(api.startsWith(StringDecoder.decode("JULvAwoUgmc").toString(Charsets.UTF_8)))
         val info = HttpClient.get("$api/$mid")?.data<BlacklistInfo>() ?: return@runCatching
         val blockedKey = "user_blocked_$mid"
-        if (info.isBlacklist && info.banUntil.time > current) Utils.runOnMainThread {
-            cachePrefs.edit { putBoolean(blockedKey, true) }
-            userBlocked = true
-            val banUntil = info.banUntil.format()
-            val topActivity = ApplicationDelegate.getTopActivity()
-            if (topActivity != null && !dialogShowing) {
-                AlertDialog.Builder(topActivity)
-                    .setTitle(Utils.getString("biliroaming_blocked_title"))
-                    .setMessage(Utils.getString("biliroaming_blocked_description", banUntil))
-                    .setNegativeButton(Utils.getString("biliroaming_get_it"), null)
-                    .setPositiveButton(Utils.getString("biliroaming_view_reason")) { _, _ ->
-                        val uri = Uri.parse("https://t.me/BiliRoamingServerBlacklistLog")
-                        topActivity.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    }.create().constraintSize().apply {
-                        setCancelable(false)
-                        setCanceledOnTouchOutside(false)
-                        onDismiss { dialogShowing = false }
-                    }.show()
-                dialogShowing = true
-            }
-        } else if (cachePrefs.getBoolean(blockedKey, false)) {
-            cachePrefs.edit { putBoolean(blockedKey, false) }
-            userBlocked = false
-            Utils.runOnMainThread {
-                val topActivity = ApplicationDelegate.getTopActivity()
-                if (topActivity != null && !dialogShowing) {
-                    AlertDialog.Builder(topActivity)
-                        .setTitle(Utils.getString("biliroaming_unblocked_title"))
-                        .setMessage(Utils.getString("biliroaming_unblocked_description"))
-                        .setPositiveButton(Utils.getString("biliroaming_reboot_now")) { _, _ ->
-                            Utils.reboot()
-                        }.create().constraintSize().apply {
-                            setCancelable(false)
-                            setCanceledOnTouchOutside(false)
-                            onDismiss { dialogShowing = false }
-                        }.show()
-                    dialogShowing = true
-                }
-            }
-        }
     }.onFailure {
         if (it is IllegalArgumentException)
             throw it
